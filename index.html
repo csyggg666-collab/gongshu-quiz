@@ -34,6 +34,16 @@
   .chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:13px;user-select:none}
   .chip.on{background:var(--accent2);border-color:var(--accent);color:#fff}
 
+  .switch-row{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+  .switch-row>span:first-child{font-size:14px}
+  .switch{position:relative;display:inline-block;width:46px;height:26px;flex:none}
+  .switch input{opacity:0;width:0;height:0;position:absolute}
+  .switch .slider{position:absolute;inset:0;background:var(--panel2);border:1px solid var(--line);border-radius:26px;transition:.2s}
+  .switch .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;top:3px;background:#cbd5e1;border-radius:50%;transition:.2s}
+  .switch input:checked+.slider{background:var(--accent2);border-color:var(--accent)}
+  .switch input:checked+.slider:before{transform:translateX(20px);background:#fff}
+  .switch-hint{color:var(--muted);font-size:12px;margin-top:8px;line-height:1.5}
+
   .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   @media(max-width:680px){.modes{grid-template-columns:1fr}}
   .mode{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.15s;text-align:left}
@@ -160,6 +170,15 @@
     </div>
   </div>
 
+  <div class="section-title">练习设置</div>
+  <div class="filters">
+    <label class="switch-row" for="autoExplain">
+      <span>作答后自动显示解析</span>
+      <span class="switch"><input type="checkbox" id="autoExplain" checked><span class="slider"></span></span>
+    </label>
+    <div class="switch-hint" id="autoHint"></div>
+  </div>
+
   <div class="section-title">选择练习模式</div>
   <div class="modes">
     <div class="mode" onclick="App.start('seq')">
@@ -230,8 +249,18 @@ const App = {
   filter:{src:'all', type:'all'},
   mode:null, order:[], pos:0, state:{}, submitted:false,
   timerId:null, t0:0,
+  autoExplain:true,
 
   init(){
+    // auto-explain setting (persisted)
+    try{ const v=localStorage.getItem('autoExplain'); if(v!==null) this.autoExplain = v==='1'; }catch(e){}
+    const sw=$('#autoExplain');
+    sw.checked=this.autoExplain;
+    const renderHint=()=>{ $('#autoHint').textContent = this.autoExplain
+      ? '已开启：选择题作答后立即显示答案与解析。（适用于顺序 / 随机练习；考试模式始终交卷后才显示）'
+      : '已关闭：作答后不自动给出解析，需手动点“显示答案与解析”按钮查看。'; };
+    sw.onchange=()=>{ this.autoExplain=sw.checked; try{localStorage.setItem('autoExplain',sw.checked?'1':'0');}catch(e){} renderHint(); };
+    renderHint();
     // stats
     const cnt=(p)=>Q.filter(p).length;
     $('#stats').innerHTML=[
@@ -351,11 +380,17 @@ const App = {
       });
       card.appendChild(box);
     }
+    if(!exam && !st.revealed && !this.autoExplain){
+      const b=el('button','btn primary reveal-btn');
+      b.textContent='显示答案与解析';
+      b.onclick=()=>{st.revealed=true;this.render();};
+      card.appendChild(b);
+    }
     if(showFB) this.appendChoiceAnswer(card,q,st);
   },
   pickChoice(q,L){
     const st=this.state[q.id]; st.sel=L;
-    if(this.mode!=='exam') st.revealed=true;   // instant feedback in practice
+    if(this.mode!=='exam' && this.autoExplain) st.revealed=true;   // instant feedback when auto-explain on
     this.render();
   },
   appendChoiceAnswer(card,q,st){
