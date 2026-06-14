@@ -125,6 +125,18 @@
   .pcell.wrong{background:var(--red);color:#fff;border-color:var(--red)}
   .pcell.marked{background:var(--amber);color:#111;border-color:var(--amber)}
 
+  /* ---------- Subject tabs ---------- */
+  .subjects{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px}
+  .subtab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--panel);border:1.5px solid var(--line);color:var(--txt);border-radius:14px;padding:14px 16px;cursor:pointer;font-size:16px;font-weight:700;transition:.15s;text-align:left}
+  .subtab:hover{border-color:var(--accent)}
+  .subtab.on{background:var(--accent2);border-color:var(--accent);color:#fff}
+  .subtab small{font-size:12px;font-weight:400;opacity:.8}
+
+  /* physics solution images & figures */
+  .solimg{display:block;max-width:100%;height:auto;margin:8px 0;border:1px solid var(--cardline);border-radius:8px;background:#fff}
+  .qfig{max-width:100%;height:auto;border:1px solid var(--cardline);border-radius:8px;background:#fff}
+  .multi-hint{font-size:12px;color:var(--cardmuted);margin-top:6px}
+
   /* ---------- Result ---------- */
   .result-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;text-align:center;margin:20px 0}
   .score{font-size:54px;font-weight:800}
@@ -143,16 +155,22 @@
   <header class="top">
     <div style="font-size:30px">📚</div>
     <div>
-      <h1>工数（线性代数）题库练习</h1>
-      <div class="sub">题目与答案整合自《工数题库1》《工数题库2》</div>
+      <h1 id="homeTitle">题库练习</h1>
+      <div class="sub" id="homeSub"></div>
     </div>
   </header>
+
+  <div class="section-title">选择科目</div>
+  <div class="subjects" id="subjectTabs">
+    <button class="subtab on" data-subject="math">📐 工数（线性代数）<small id="cntMath"></small></button>
+    <button class="subtab" data-subject="phys">🔬 大学物理<small id="cntPhys"></small></button>
+  </div>
 
   <div class="stats" id="stats"></div>
 
   <div class="section-title">练习范围（默认全部）</div>
   <div class="filters">
-    <div class="filter-row">
+    <div class="filter-row" id="srcRow">
       <span class="lbl">来源</span>
       <span class="chip on" data-grp="src" data-val="all">全部</span>
       <span class="chip" data-grp="src" data-val="1">题库1</span>
@@ -194,7 +212,7 @@
       <p>计时作答，全部做完后统一交卷评分并回看。</p>
     </div>
   </div>
-  <footer>共 190 题 · 离线可用 · 数学公式由 MathJax / 题库图片渲染</footer>
+  <footer id="homeFoot">离线可用 · 数学公式由 MathJax / 题库图片渲染</footer>
 </div>
 
 <!-- ============ QUIZ ============ -->
@@ -223,16 +241,20 @@
 <div id="result" class="hide wrap"></div>
 
 <script src="data.js"></script>
+<script src="phys.js"></script>
 <script>
 window.MathJax = {
-  loader:{load:['input/mml','output/svg']},
+  tex:{inlineMath:[['\\(','\\)'],['$','$']], displayMath:[['$$','$$'],['\\[','\\]']]},
   startup:{typeset:false},
   svg:{fontCache:'none'}
 };
 </script>
-<script src="mathjax/mml-svg.js" id="mjx"></script>
+<script src="mathjax/tex-mml-svg.js" id="mjx"></script>
 <script>
-const Q = window.QUESTIONS || [];
+const Q = [
+  ...(window.QUESTIONS||[]).map(q=> q.subject ? q : {...q, subject:'math'}),
+  ...(window.PHYS_QUESTIONS||[])
+];
 const $ = s=>document.querySelector(s);
 const el = (t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
 const LETTERS=['A','B','C','D'];
@@ -247,6 +269,7 @@ function typeset(node){
 
 const App = {
   filter:{src:'all', type:'all'},
+  subject:'math',
   mode:null, order:[], pos:0, state:{}, submitted:false,
   timerId:null, t0:0,
   autoExplain:true,
@@ -261,14 +284,20 @@ const App = {
       : '已关闭：作答后不自动给出解析，需手动点“显示答案与解析”按钮查看。'; };
     sw.onchange=()=>{ this.autoExplain=sw.checked; try{localStorage.setItem('autoExplain',sw.checked?'1':'0');}catch(e){} renderHint(); };
     renderHint();
-    // stats
-    const cnt=(p)=>Q.filter(p).length;
-    $('#stats').innerHTML=[
-      ['总题数',Q.length],
-      ['选择题',cnt(q=>q.type==='choice')],
-      ['填空题',cnt(q=>q.type==='fill')],
-      ['解答题',cnt(q=>q.type==='solve')],
-    ].map(([s,n])=>`<div class="stat"><b>${n}</b><span>${s}</span></div>`).join('');
+    // subject tab counts
+    $('#cntMath').textContent=' · '+Q.filter(q=>q.subject==='math').length+' 题';
+    $('#cntPhys').textContent=' · '+Q.filter(q=>q.subject==='phys').length+' 题';
+    // subject tabs
+    document.querySelectorAll('.subtab').forEach(t=>{
+      t.onclick=()=>{
+        document.querySelectorAll('.subtab').forEach(x=>x.classList.remove('on'));
+        t.classList.add('on');
+        this.subject=t.dataset.subject;
+        this.filter={src:'all',type:'all'};
+        document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.val==='all'));
+        this.refreshHome();
+      };
+    });
     // filter chips
     document.querySelectorAll('.chip').forEach(ch=>{
       ch.onclick=()=>{
@@ -279,10 +308,27 @@ const App = {
         this.updateFilterCount();
       };
     });
+    this.refreshHome();
+  },
+  refreshHome(){
+    const inSub=Q.filter(q=>q.subject===this.subject);
+    const cnt=(p)=>inSub.filter(p).length;
+    $('#stats').innerHTML=[
+      ['总题数',inSub.length],
+      ['选择题',cnt(q=>q.type==='choice')],
+      ['填空题',cnt(q=>q.type==='fill')],
+      ['解答题',cnt(q=>q.type==='solve')],
+    ].map(([s,n])=>`<div class="stat"><b>${n}</b><span>${s}</span></div>`).join('');
+    const isMath=this.subject==='math';
+    $('#homeTitle').textContent=isMath?'工数（线性代数）题库练习':'大学物理复习题练习';
+    $('#homeSub').textContent=isMath?'题目与答案整合自《工数题库1》《工数题库2》':'题目与答案整合自《大学物理复习题》';
+    $('#srcRow').style.display=isMath?'':'none';
+    $('#homeFoot').textContent=`共 ${inSub.length} 题 · 离线可用 · 数学公式由 MathJax / 题库图片渲染`;
     this.updateFilterCount();
   },
   selection(){
     return Q.filter(q=>
+      q.subject===this.subject &&
       (this.filter.src==='all'||q.src==+this.filter.src) &&
       (this.filter.type==='all'||q.type===this.filter.type));
   },
@@ -330,7 +376,9 @@ const App = {
     // meta
     const meta=el('div','qmeta');
     meta.innerHTML=
-      `<span class="tag src${q.src}">题库${q.src}</span>`+
+      (q.subject==='phys'
+        ? `<span class="tag src2">大学物理</span>`
+        : `<span class="tag src${q.src}">题库${q.src}</span>`)+
       `<span class="tag t-${q.type}">${q.section}</span>`+
       `<span class="tag">原题号 ${q.num}</span>`;
     card.appendChild(meta);
@@ -345,6 +393,20 @@ const App = {
     if(!$('#palette').classList.contains('hide')) this.renderPalette();
   },
 
+  // ---------- CHOICE helpers (single & multi answer) ----------
+  isAnsLetter(q,L){ return q.multi ? (q.answer||'').includes(L) : q.answer===L; },
+  isSelLetter(st,q,L){ return q.multi ? (Array.isArray(st.sel)&&st.sel.includes(L)) : st.sel===L; },
+  choiceAnswered(q,st){ return q.multi ? (Array.isArray(st.sel)&&st.sel.length>0) : st.sel!=null; },
+  choiceCorrect(q,st){
+    if(!this.choiceAnswered(q,st)) return false;
+    if(q.multi){
+      const a=(q.answer||'').split('').sort().join('');
+      const s=[...st.sel].sort().join('');
+      return a===s;
+    }
+    return st.sel===q.answer;
+  },
+
   // ---------- CHOICE ----------
   renderChoice(card,q,st){
     const exam=this.mode==='exam';
@@ -355,11 +417,11 @@ const App = {
         const L=LETTERS[i];
         const row=el('div','opt');
         row.innerHTML=`<span class="key">${L}.</span><span class="otxt">${oh}</span>`;
-        if(st.sel===L) row.classList.add('sel');
+        if(this.isSelLetter(st,q,L)) row.classList.add('sel');
         if(showFB){
           row.classList.add('disabled');
-          if(L===q.answer) row.classList.add('correct');
-          else if(st.sel===L) row.classList.add('wrong');
+          if(this.isAnsLetter(q,L)) row.classList.add('correct');
+          else if(this.isSelLetter(st,q,L)) row.classList.add('wrong');
         } else {
           row.onclick=()=>this.pickChoice(q,L);
         }
@@ -371,36 +433,50 @@ const App = {
       const box=el('div','letters');
       LETTERS.forEach(L=>{
         const b=el('button','lbtn'); b.textContent=L;
-        if(st.sel===L) b.classList.add('sel');
+        if(this.isSelLetter(st,q,L)) b.classList.add('sel');
         if(showFB){
-          if(L===q.answer) b.classList.add('correct');
-          else if(st.sel===L) b.classList.add('wrong');
+          if(this.isAnsLetter(q,L)) b.classList.add('correct');
+          else if(this.isSelLetter(st,q,L)) b.classList.add('wrong');
         } else b.onclick=()=>this.pickChoice(q,L);
         box.appendChild(b);
       });
       card.appendChild(box);
     }
-    if(!exam && !st.revealed && !this.autoExplain){
+    if(q.multi && !showFB){
+      const h=el('div','multi-hint');
+      h.textContent='本题为多选题，可选择多个选项，选好后点下方按钮提交。';
+      card.appendChild(h);
+    }
+    // reveal button: multi always needs it; single only when auto-explain off
+    if(!exam && !st.revealed && (q.multi || !this.autoExplain)){
       const b=el('button','btn primary reveal-btn');
-      b.textContent='显示答案与解析';
+      b.textContent = q.multi ? '提交并查看答案' : '显示答案与解析';
       b.onclick=()=>{st.revealed=true;this.render();};
       card.appendChild(b);
     }
     if(showFB) this.appendChoiceAnswer(card,q,st);
   },
   pickChoice(q,L){
-    const st=this.state[q.id]; st.sel=L;
-    if(this.mode!=='exam' && this.autoExplain) st.revealed=true;   // instant feedback when auto-explain on
+    const st=this.state[q.id];
+    if(q.multi){
+      if(!Array.isArray(st.sel)) st.sel=[];
+      const i=st.sel.indexOf(L);
+      if(i>=0) st.sel.splice(i,1); else st.sel.push(L);
+    } else {
+      st.sel=L;
+      if(this.mode!=='exam' && this.autoExplain) st.revealed=true;  // instant feedback when auto-explain on
+    }
     this.render();
   },
   appendChoiceAnswer(card,q,st){
-    const ok = st.sel===q.answer;
+    const answered=this.choiceAnswered(q,st);
+    const correct=this.choiceCorrect(q,st);
     const ans=el('div','answer');
-    const correct = !!st.sel && ok;
     ans.innerHTML=`<div class="lab ${correct?'':'bad'}">`+
-      (st.sel? (correct?'✓ 回答正确':'✗ 回答错误') : '参考答案')+`</div>`;
+      (answered? (correct?'✓ 回答正确':'✗ 回答错误') : '参考答案')+`</div>`;
     const box=el('div','ansbox');
-    box.innerHTML=`正确答案：<span class="akey">${q.answer||'—'}</span>`;
+    const disp = q.multi ? (q.answer||'').split('').join('、') : (q.answer||'—');
+    box.innerHTML=`正确答案：<span class="akey">${disp}</span>`;
     ans.appendChild(box);
     if(q.explanation_html){
       const ex=el('div','expl');
@@ -467,14 +543,14 @@ const App = {
       const q=this.qById(id), st=this.state[id];
       const c=el('div','pcell'); c.textContent=i+1;
       if(i===this.pos)c.classList.add('cur');
-      const answered = q.type==='choice'? st.sel!=null : (st.revealed||st.text||st.self);
+      const answered = q.type==='choice'? this.choiceAnswered(q,st) : (st.revealed||st.text||st.self);
       if(this.mode==='exam' && this.submitted){
-        if(q.type==='choice') c.classList.add(st.sel===q.answer?'correct':'wrong');
+        if(q.type==='choice') c.classList.add(this.choiceCorrect(q,st)?'correct':'wrong');
         else if(st.self==='good')c.classList.add('correct');
         else if(st.self==='bad')c.classList.add('wrong');
         else c.classList.add('marked');
       } else if(this.mode!=='exam'){
-        if(q.type==='choice'&&st.revealed)c.classList.add(st.sel===q.answer?'correct':'wrong');
+        if(q.type==='choice'&&st.revealed)c.classList.add(this.choiceCorrect(q,st)?'correct':'wrong');
         else if(answered)c.classList.add('answered');
       } else if(answered)c.classList.add('answered');
       c.onclick=()=>this.jump(i);
@@ -494,7 +570,7 @@ const App = {
   submitExam(){
     const unanswered=this.order.filter(id=>{
       const q=this.qById(id),st=this.state[id];
-      return q.type==='choice'? st.sel==null : !(st.text&&st.text.trim());
+      return q.type==='choice'? !this.choiceAnswered(q,st) : !(st.text&&st.text.trim());
     }).length;
     if(!confirm(`确定交卷？${unanswered? '尚有 '+unanswered+' 题未作答。':''}`))return;
     this.submitted=true; this.stopTimer();
@@ -505,7 +581,7 @@ const App = {
     const choices=this.order.map(id=>this.qById(id)).filter(q=>q.type==='choice');
     const opens=this.order.map(id=>this.qById(id)).filter(q=>q.type!=='choice');
     let cCorrect=0,cAnswered=0;
-    choices.forEach(q=>{const st=this.state[q.id]; if(st.sel!=null)cAnswered++; if(st.sel===q.answer)cCorrect++;});
+    choices.forEach(q=>{const st=this.state[q.id]; if(this.choiceAnswered(q,st))cAnswered++; if(this.choiceCorrect(q,st))cCorrect++;});
     const total=this.order.length;
     // objective score from choices; open questions need self-grading
     const m=String(Math.floor(elapsed/60)).padStart(2,'0'), ss=String(elapsed%60).padStart(2,'0');
