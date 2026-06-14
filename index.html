@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工数（线性代数）题库练习</title>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#273449; --line:#334155;
+    --txt:#e2e8f0; --muted:#94a3b8; --accent:#3b82f6; --accent2:#2563eb;
+    --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+    --card:#ffffff; --cardtxt:#1f2937; --cardline:#e5e7eb; --cardmuted:#6b7280;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.6;overflow-x:hidden}
+  a{color:var(--accent)}
+  .wrap{max-width:920px;margin:0 auto;padding:16px}
+  .hide{display:none!important}
+
+  /* ---------- Home ---------- */
+  header.top{display:flex;align-items:center;gap:12px;padding:18px 0 10px}
+  header.top h1{font-size:22px;margin:0;font-weight:700}
+  header.top .sub{color:var(--muted);font-size:13px}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;flex:1;min-width:120px}
+  .stat b{font-size:22px;display:block}
+  .stat span{color:var(--muted);font-size:12px}
+
+  .section-title{font-size:14px;color:var(--muted);margin:20px 0 8px;letter-spacing:.5px}
+  .filters{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:8px}
+  .filter-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+  .filter-row .lbl{width:64px;color:var(--muted);font-size:13px}
+  .chip{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:6px 12px;border-radius:20px;cursor:pointer;font-size:13px;user-select:none}
+  .chip.on{background:var(--accent2);border-color:var(--accent);color:#fff}
+
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:680px){.modes{grid-template-columns:1fr}}
+  .mode{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.15s;text-align:left}
+  .mode:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .mode .ic{font-size:26px}
+  .mode h3{margin:8px 0 4px;font-size:17px}
+  .mode p{margin:0;color:var(--muted);font-size:13px}
+
+  /* ---------- Quiz ---------- */
+  .bar{position:sticky;top:0;z-index:20;background:rgba(15,23,42,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 0}
+  .bar .wrap{display:flex;align-items:center;gap:10px;padding-top:8px;padding-bottom:8px}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 14px;border-radius:9px;cursor:pointer;font-size:14px}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent2);border-color:var(--accent);color:#fff}
+  .btn.ghost{background:transparent}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .bar .mid{flex:1;text-align:center;font-size:14px;color:var(--muted)}
+  .bar .mid b{color:var(--txt)}
+  .progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+  .progress>i{display:block;height:100%;background:var(--accent);width:0;transition:.3s}
+  .timer{font-variant-numeric:tabular-nums;color:var(--amber);font-size:14px}
+
+  .card{background:var(--card);color:var(--cardtxt);border-radius:16px;padding:22px 24px;margin:16px 0;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  .qmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  .tag{font-size:12px;padding:2px 9px;border-radius:20px;border:1px solid var(--cardline);color:var(--cardmuted)}
+  .tag.src1{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+  .tag.src2{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
+  .tag.t-choice{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}
+  .tag.t-fill{background:#fff7ed;color:#c2410c;border-color:#fed7aa}
+  .tag.t-solve{background:#fef2f2;color:#b91c1c;border-color:#fecaca}
+  .stem{font-size:17px;color:var(--cardtxt);overflow-x:auto;overflow-y:hidden}
+  .eq{vertical-align:middle;margin:0 1px}
+  mjx-container{color:inherit;max-width:100%}
+  mjx-container svg{vertical-align:middle}
+  .stem::-webkit-scrollbar,.ansbox::-webkit-scrollbar,.expl::-webkit-scrollbar,.otxt::-webkit-scrollbar{height:6px}
+  .stem::-webkit-scrollbar-thumb,.ansbox::-webkit-scrollbar-thumb,.expl::-webkit-scrollbar-thumb,.otxt::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:6px}
+
+  .opts{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+  .opt{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--cardline);border-radius:11px;padding:11px 14px;cursor:pointer;transition:.12s;background:#fff}
+  .opt:hover{border-color:var(--accent)}
+  .opt .key{font-weight:700;color:var(--accent2);min-width:20px}
+  .opt .otxt{flex:1;overflow-x:auto;overflow-y:hidden}
+  .opt.sel{border-color:var(--accent);background:#eff6ff}
+  .opt.correct{border-color:var(--green);background:#f0fdf4}
+  .opt.wrong{border-color:var(--red);background:#fef2f2}
+  .opt.correct .key{color:var(--green)}
+  .opt.wrong .key{color:var(--red)}
+  .opt.disabled{cursor:default}
+
+  .letters{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .lbtn{width:46px;height:46px;border-radius:11px;border:1.5px solid var(--cardline);background:#fff;color:var(--cardtxt);font-size:17px;font-weight:700;cursor:pointer}
+  .lbtn:hover{border-color:var(--accent)}
+  .lbtn.sel{border-color:var(--accent);background:#eff6ff;color:var(--accent2)}
+  .lbtn.correct{border-color:var(--green);background:#dcfce7;color:#15803d}
+  .lbtn.wrong{border-color:var(--red);background:#fee2e2;color:#b91c1c}
+
+  .reveal-btn{margin-top:16px}
+  .answer{margin-top:16px;border-top:1px dashed var(--cardline);padding-top:14px}
+  .answer .lab{font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px}
+  .answer .lab.bad{color:var(--red)}
+  .ansbox{background:#f8fafc;border:1px solid var(--cardline);border-radius:10px;padding:12px 14px;color:var(--cardtxt);overflow-x:auto;overflow-y:hidden}
+  .ansbox .akey{font-size:20px;font-weight:800;color:var(--green)}
+  .expl{margin-top:12px;color:#374151;font-size:15px;overflow-x:auto;overflow-y:hidden}
+  .expl .h{font-size:13px;font-weight:700;color:var(--cardmuted);margin-bottom:4px}
+  textarea.selfans{width:100%;min-height:90px;border:1px solid var(--cardline);border-radius:10px;padding:10px;font-family:inherit;font-size:15px;resize:vertical;color:var(--cardtxt)}
+  .selfmark{display:flex;gap:10px;margin-top:10px;align-items:center}
+  .selfmark .q{color:var(--cardmuted);font-size:13px}
+  .smbtn{padding:6px 12px;border-radius:8px;border:1px solid var(--cardline);background:#fff;cursor:pointer;font-size:13px}
+  .smbtn.good.on{background:#dcfce7;border-color:var(--green);color:#15803d}
+  .smbtn.bad.on{background:#fee2e2;border-color:var(--red);color:#b91c1c}
+
+  .nav{display:flex;gap:10px;justify-content:space-between;margin:18px 0 40px}
+  .palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:7px;margin:16px 0}
+  .pcell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:13px}
+  .pcell:hover{border-color:var(--accent)}
+  .pcell.cur{outline:2px solid var(--accent)}
+  .pcell.answered{background:var(--accent2);color:#fff;border-color:var(--accent)}
+  .pcell.correct{background:var(--green);color:#fff;border-color:var(--green)}
+  .pcell.wrong{background:var(--red);color:#fff;border-color:var(--red)}
+  .pcell.marked{background:var(--amber);color:#111;border-color:var(--amber)}
+
+  /* ---------- Result ---------- */
+  .result-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;text-align:center;margin:20px 0}
+  .score{font-size:54px;font-weight:800}
+  .score small{font-size:18px;color:var(--muted)}
+  .rgrid{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:18px 0}
+  .rstat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 18px;min-width:110px}
+  .rstat b{display:block;font-size:24px}
+  .rstat span{color:var(--muted);font-size:12px}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:24px 0}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div id="home" class="wrap">
+  <header class="top">
+    <div style="font-size:30px">📚</div>
+    <div>
+      <h1>工数（线性代数）题库练习</h1>
+      <div class="sub">题目与答案整合自《工数题库1》《工数题库2》</div>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="section-title">练习范围（默认全部）</div>
+  <div class="filters">
+    <div class="filter-row">
+      <span class="lbl">来源</span>
+      <span class="chip on" data-grp="src" data-val="all">全部</span>
+      <span class="chip" data-grp="src" data-val="1">题库1</span>
+      <span class="chip" data-grp="src" data-val="2">题库2</span>
+    </div>
+    <div class="filter-row">
+      <span class="lbl">题型</span>
+      <span class="chip on" data-grp="type" data-val="all">全部</span>
+      <span class="chip" data-grp="type" data-val="choice">选择题</span>
+      <span class="chip" data-grp="type" data-val="fill">填空题</span>
+      <span class="chip" data-grp="type" data-val="solve">解答题</span>
+    </div>
+    <div class="filter-row" style="color:var(--muted);font-size:13px">
+      <span class="lbl">已选</span><span id="filterCount"></span>
+    </div>
+  </div>
+
+  <div class="section-title">选择练习模式</div>
+  <div class="modes">
+    <div class="mode" onclick="App.start('seq')">
+      <div class="ic">📖</div><h3>顺序练习</h3>
+      <p>按题库原始顺序逐题练习，可即时查看答案与解析。</p>
+    </div>
+    <div class="mode" onclick="App.start('rand')">
+      <div class="ic">🔀</div><h3>随机练习</h3>
+      <p>题目随机打乱顺序，巩固记忆、避免顺序依赖。</p>
+    </div>
+    <div class="mode" onclick="App.start('exam')">
+      <div class="ic">📝</div><h3>考试模式</h3>
+      <p>计时作答，全部做完后统一交卷评分并回看。</p>
+    </div>
+  </div>
+  <footer>共 190 题 · 离线可用 · 数学公式由 MathJax / 题库图片渲染</footer>
+</div>
+
+<!-- ============ QUIZ ============ -->
+<div id="quiz" class="hide">
+  <div class="bar">
+    <div class="wrap">
+      <button class="btn ghost" onclick="App.home()">← 退出</button>
+      <div class="mid"><b id="qModeName"></b> · <span id="qCounter"></span></div>
+      <span class="timer hide" id="qTimer">00:00</span>
+      <button class="btn primary hide" id="submitBtn" onclick="App.submitExam()">交卷</button>
+    </div>
+    <div class="wrap" style="padding-top:0"><div class="progress"><i id="qProgress"></i></div></div>
+  </div>
+  <div class="wrap">
+    <div id="qCard"></div>
+    <div class="nav">
+      <button class="btn" id="prevBtn" onclick="App.go(-1)">← 上一题</button>
+      <button class="btn" id="paletteBtn" onclick="App.togglePalette()">题号一览</button>
+      <button class="btn" id="nextBtn" onclick="App.go(1)">下一题 →</button>
+    </div>
+    <div id="palette" class="palette hide"></div>
+  </div>
+</div>
+
+<!-- ============ RESULT ============ -->
+<div id="result" class="hide wrap"></div>
+
+<script src="data.js"></script>
+<script>
+window.MathJax = {
+  loader:{load:['input/mml','output/svg']},
+  startup:{typeset:false},
+  svg:{fontCache:'none'}
+};
+</script>
+<script src="mathjax/mml-svg.js" id="mjx"></script>
+<script>
+const Q = window.QUESTIONS || [];
+const $ = s=>document.querySelector(s);
+const el = (t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
+const LETTERS=['A','B','C','D'];
+
+// ---- MathJax helpers ----
+function typeset(node){
+  if(window.MathJax && MathJax.typesetPromise){
+    return MathJax.typesetPromise([node]).catch(e=>console.warn('mjx',e));
+  }
+  return Promise.resolve();
+}
+
+const App = {
+  filter:{src:'all', type:'all'},
+  mode:null, order:[], pos:0, state:{}, submitted:false,
+  timerId:null, t0:0,
+
+  init(){
+    // stats
+    const cnt=(p)=>Q.filter(p).length;
+    $('#stats').innerHTML=[
+      ['总题数',Q.length],
+      ['选择题',cnt(q=>q.type==='choice')],
+      ['填空题',cnt(q=>q.type==='fill')],
+      ['解答题',cnt(q=>q.type==='solve')],
+    ].map(([s,n])=>`<div class="stat"><b>${n}</b><span>${s}</span></div>`).join('');
+    // filter chips
+    document.querySelectorAll('.chip').forEach(ch=>{
+      ch.onclick=()=>{
+        const g=ch.dataset.grp;
+        document.querySelectorAll(`.chip[data-grp="${g}"]`).forEach(x=>x.classList.remove('on'));
+        ch.classList.add('on');
+        this.filter[g]=ch.dataset.val;
+        this.updateFilterCount();
+      };
+    });
+    this.updateFilterCount();
+  },
+  selection(){
+    return Q.filter(q=>
+      (this.filter.src==='all'||q.src==+this.filter.src) &&
+      (this.filter.type==='all'||q.type===this.filter.type));
+  },
+  updateFilterCount(){ $('#filterCount').textContent = this.selection().length + ' 题'; },
+
+  start(mode){
+    const sel=this.selection();
+    if(sel.length===0){alert('当前筛选没有题目');return;}
+    this.mode=mode; this.submitted=false; this.state={}; this.pos=0;
+    this.order = sel.map(q=>q.id);
+    if(mode==='rand'||mode==='exam') this.shuffle(this.order);
+    sel.forEach(q=>this.state[q.id]={sel:null,revealed:false,self:null,text:''});
+    $('#home').classList.add('hide');
+    $('#result').classList.add('hide');
+    $('#quiz').classList.remove('hide');
+    $('#qModeName').textContent={seq:'顺序练习',rand:'随机练习',exam:'考试模式'}[mode];
+    const isExam=mode==='exam';
+    $('#submitBtn').classList.toggle('hide',!isExam);
+    $('#qTimer').classList.toggle('hide',!isExam);
+    if(isExam){ this.t0=Date.now(); this.startTimer(); } else this.stopTimer();
+    $('#palette').classList.add('hide');
+    window.scrollTo(0,0);
+    this.render();
+  },
+  shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}},
+
+  home(){
+    if(this.mode==='exam' && !this.submitted && !confirm('考试尚未交卷，确定退出？')) return;
+    this.stopTimer();
+    $('#quiz').classList.add('hide'); $('#result').classList.add('hide');
+    $('#home').classList.remove('hide');
+  },
+
+  qById(id){return Q.find(q=>q.id===id);},
+  cur(){return this.qById(this.order[this.pos]);},
+
+  render(){
+    const q=this.cur(), st=this.state[q.id];
+    $('#qCounter').textContent=`第 ${this.pos+1} / ${this.order.length} 题`;
+    $('#qProgress').style.width=((this.pos+1)/this.order.length*100)+'%';
+    $('#prevBtn').disabled=this.pos===0;
+    $('#nextBtn').disabled=this.pos===this.order.length-1;
+
+    const card=el('div','card');
+    // meta
+    const meta=el('div','qmeta');
+    meta.innerHTML=
+      `<span class="tag src${q.src}">题库${q.src}</span>`+
+      `<span class="tag t-${q.type}">${q.section}</span>`+
+      `<span class="tag">原题号 ${q.num}</span>`;
+    card.appendChild(meta);
+    // stem
+    const stem=el('div','stem'); stem.innerHTML=q.stem_html; card.appendChild(stem);
+
+    if(q.type==='choice') this.renderChoice(card,q,st);
+    else this.renderOpen(card,q,st);
+
+    $('#qCard').innerHTML=''; $('#qCard').appendChild(card);
+    typeset(card);
+    if(!$('#palette').classList.contains('hide')) this.renderPalette();
+  },
+
+  // ---------- CHOICE ----------
+  renderChoice(card,q,st){
+    const exam=this.mode==='exam';
+    const showFB = !exam ? st.revealed : this.submitted;  // feedback shown?
+    if(q.options){
+      const box=el('div','opts');
+      q.options.forEach((oh,i)=>{
+        const L=LETTERS[i];
+        const row=el('div','opt');
+        row.innerHTML=`<span class="key">${L}.</span><span class="otxt">${oh}</span>`;
+        if(st.sel===L) row.classList.add('sel');
+        if(showFB){
+          row.classList.add('disabled');
+          if(L===q.answer) row.classList.add('correct');
+          else if(st.sel===L) row.classList.add('wrong');
+        } else {
+          row.onclick=()=>this.pickChoice(q,L);
+        }
+        box.appendChild(row);
+      });
+      card.appendChild(box);
+    } else {
+      // options embedded in stem -> generic A/B/C/D buttons
+      const box=el('div','letters');
+      LETTERS.forEach(L=>{
+        const b=el('button','lbtn'); b.textContent=L;
+        if(st.sel===L) b.classList.add('sel');
+        if(showFB){
+          if(L===q.answer) b.classList.add('correct');
+          else if(st.sel===L) b.classList.add('wrong');
+        } else b.onclick=()=>this.pickChoice(q,L);
+        box.appendChild(b);
+      });
+      card.appendChild(box);
+    }
+    if(showFB) this.appendChoiceAnswer(card,q,st);
+  },
+  pickChoice(q,L){
+    const st=this.state[q.id]; st.sel=L;
+    if(this.mode!=='exam') st.revealed=true;   // instant feedback in practice
+    this.render();
+  },
+  appendChoiceAnswer(card,q,st){
+    const ok = st.sel===q.answer;
+    const ans=el('div','answer');
+    const correct = !!st.sel && ok;
+    ans.innerHTML=`<div class="lab ${correct?'':'bad'}">`+
+      (st.sel? (correct?'✓ 回答正确':'✗ 回答错误') : '参考答案')+`</div>`;
+    const box=el('div','ansbox');
+    box.innerHTML=`正确答案：<span class="akey">${q.answer||'—'}</span>`;
+    ans.appendChild(box);
+    if(q.explanation_html){
+      const ex=el('div','expl');
+      ex.innerHTML=`<div class="h">解析</div>${q.explanation_html}`;
+      ans.appendChild(ex);
+    }
+    card.appendChild(ans);
+  },
+
+  // ---------- FILL / SOLVE ----------
+  renderOpen(card,q,st){
+    const exam=this.mode==='exam';
+    if(exam && !this.submitted){
+      const ta=el('textarea','selfans');
+      ta.placeholder='在此作答（可选，用于交卷后自评）';
+      ta.value=st.text||'';
+      ta.oninput=()=>{st.text=ta.value;};
+      card.appendChild(ta);
+      return;
+    }
+    if(!exam && !st.revealed){
+      const b=el('button','btn primary reveal-btn');
+      b.textContent='显示答案';
+      b.onclick=()=>{st.revealed=true;this.render();};
+      card.appendChild(b);
+      return;
+    }
+    // show answer
+    if(exam && st.text){
+      const yb=el('div','answer');
+      yb.innerHTML=`<div class="lab" style="color:var(--cardmuted)">你的作答</div>`;
+      const t=el('div','ansbox'); t.style.whiteSpace='pre-wrap'; t.textContent=st.text;
+      yb.appendChild(t); card.appendChild(yb);
+    }
+    const ans=el('div','answer');
+    ans.innerHTML=`<div class="lab">${q.type==='fill'?'参考答案':'参考解答'}</div>`;
+    const box=el('div','ansbox'); box.innerHTML=q.answer||'（无）';
+    ans.appendChild(box);
+    if(q.explanation_html){
+      const ex=el('div','expl'); ex.innerHTML=`<div class="h">解析</div>${q.explanation_html}`;
+      ans.appendChild(ex);
+    }
+    // self mark
+    const sm=el('div','selfmark');
+    sm.innerHTML=`<span class="q">自评：</span>`;
+    const gb=el('button','smbtn good'); gb.textContent='我做对了';
+    const bb=el('button','smbtn bad'); bb.textContent='我做错了';
+    if(st.self==='good')gb.classList.add('on');
+    if(st.self==='bad')bb.classList.add('on');
+    gb.onclick=()=>{st.self=st.self==='good'?null:'good';this.render();};
+    bb.onclick=()=>{st.self=st.self==='bad'?null:'bad';this.render();};
+    sm.appendChild(gb); sm.appendChild(bb);
+    ans.appendChild(sm);
+    card.appendChild(ans);
+  },
+
+  // ---------- nav ----------
+  go(d){const n=this.pos+d; if(n<0||n>=this.order.length)return; this.pos=n; window.scrollTo(0,0); this.render();},
+  jump(i){this.pos=i; window.scrollTo(0,0); this.render();},
+  togglePalette(){const p=$('#palette'); p.classList.toggle('hide'); if(!p.classList.contains('hide'))this.renderPalette();},
+  renderPalette(){
+    const p=$('#palette'); p.innerHTML='';
+    this.order.forEach((id,i)=>{
+      const q=this.qById(id), st=this.state[id];
+      const c=el('div','pcell'); c.textContent=i+1;
+      if(i===this.pos)c.classList.add('cur');
+      const answered = q.type==='choice'? st.sel!=null : (st.revealed||st.text||st.self);
+      if(this.mode==='exam' && this.submitted){
+        if(q.type==='choice') c.classList.add(st.sel===q.answer?'correct':'wrong');
+        else if(st.self==='good')c.classList.add('correct');
+        else if(st.self==='bad')c.classList.add('wrong');
+        else c.classList.add('marked');
+      } else if(this.mode!=='exam'){
+        if(q.type==='choice'&&st.revealed)c.classList.add(st.sel===q.answer?'correct':'wrong');
+        else if(answered)c.classList.add('answered');
+      } else if(answered)c.classList.add('answered');
+      c.onclick=()=>this.jump(i);
+      p.appendChild(c);
+    });
+  },
+
+  // ---------- timer ----------
+  startTimer(){this.stopTimer();this.timerId=setInterval(()=>{
+    const s=Math.floor((Date.now()-this.t0)/1000);
+    const m=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0');
+    $('#qTimer').textContent=`${m}:${ss}`;
+  },500);},
+  stopTimer(){if(this.timerId){clearInterval(this.timerId);this.timerId=null;}},
+
+  // ---------- exam submit ----------
+  submitExam(){
+    const unanswered=this.order.filter(id=>{
+      const q=this.qById(id),st=this.state[id];
+      return q.type==='choice'? st.sel==null : !(st.text&&st.text.trim());
+    }).length;
+    if(!confirm(`确定交卷？${unanswered? '尚有 '+unanswered+' 题未作答。':''}`))return;
+    this.submitted=true; this.stopTimer();
+    this.showResult();
+  },
+  showResult(){
+    const elapsed=Math.floor((Date.now()-this.t0)/1000);
+    const choices=this.order.map(id=>this.qById(id)).filter(q=>q.type==='choice');
+    const opens=this.order.map(id=>this.qById(id)).filter(q=>q.type!=='choice');
+    let cCorrect=0,cAnswered=0;
+    choices.forEach(q=>{const st=this.state[q.id]; if(st.sel!=null)cAnswered++; if(st.sel===q.answer)cCorrect++;});
+    const total=this.order.length;
+    // objective score from choices; open questions need self-grading
+    const m=String(Math.floor(elapsed/60)).padStart(2,'0'), ss=String(elapsed%60).padStart(2,'0');
+    const r=$('#result'); r.classList.remove('hide'); $('#quiz').classList.add('hide');
+    r.innerHTML=`
+      <div class="result-card">
+        <div style="color:var(--muted);font-size:14px">考试完成 · 用时 ${m}:${ss}</div>
+        <div class="score">${choices.length?Math.round(cCorrect/choices.length*100):'—'}<small> 分（选择题客观分）</small></div>
+        <div class="rgrid">
+          <div class="rstat"><b>${cCorrect}/${choices.length}</b><span>选择题答对</span></div>
+          <div class="rstat"><b>${cAnswered}</b><span>选择题已答</span></div>
+          <div class="rstat"><b>${opens.length}</b><span>主观题(需自评)</span></div>
+          <div class="rstat"><b>${total}</b><span>总题数</span></div>
+        </div>
+        <p style="color:var(--muted);font-size:13px">填空 / 解答题为主观题，请在逐题回看中对照参考答案自评。</p>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+          <button class="btn primary" onclick="App.reviewExam()">逐题回看</button>
+          <button class="btn" onclick="App.home()">返回首页</button>
+        </div>
+      </div>`;
+    window.scrollTo(0,0);
+  },
+  reviewExam(){
+    $('#result').classList.add('hide'); $('#quiz').classList.remove('hide');
+    $('#submitBtn').classList.add('hide');
+    $('#qModeName').textContent='考试回看';
+    this.pos=0; window.scrollTo(0,0); this.render();
+  }
+};
+
+// boot
+function boot(){ App.init(); }
+if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
+</script>
+</body>
+</html>
